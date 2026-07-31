@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>สมุดบัญชีรายรับ-รายจ่าย</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Chonburi&family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#F2EEE1;
+    --paper-line:#DAD2B9;
+    --card:#FBF9F1;
+    --green-deep:#1F4B3F;
+    --green-mid:#2E6A54;
+    --green-soft:#DDEAE2;
+    --gold:#B8923F;
+    --ink:#22302B;
+    --ink-soft:#5B6961;
+    --red:#A2402E;
+    --red-soft:#F5E4DF;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--paper);
+    background-image:
+      linear-gradient(var(--paper-line) 1px, transparent 1px);
+    background-size: 100% 2.1em;
+    font-family:'IBM Plex Sans Thai', sans-serif;
+    color:var(--ink);
+    padding:32px 16px 64px;
+  }
+  .wrap{max-width:760px; margin:0 auto;}
+
+  /* Cover band */
+  .cover{
+    background:
+      radial-gradient(ellipse at top left, rgba(255,255,255,0.06), transparent 60%),
+      linear-gradient(135deg, var(--green-deep), var(--green-mid));
+    border-radius:14px;
+    padding:34px 30px 28px;
+    position:relative;
+    overflow:hidden;
+    box-shadow:0 10px 30px rgba(31,75,63,0.25);
+  }
+  .cover::before{
+    content:"";
+    position:absolute; inset:8px;
+    border:1px solid rgba(184,146,63,0.55);
+    border-radius:8px;
+    pointer-events:none;
+  }
+  .cover .eyebrow{
+    color:var(--gold);
+    letter-spacing:.18em;
+    font-size:11.5px;
+    font-weight:600;
+    text-transform:uppercase;
+  }
+  .cover h1{
+    font-family:'Chonburi', serif;
+    color:#F4EFDD;
+    font-size:32px;
+    margin:8px 0 4px;
+    text-shadow:0 2px 0 rgba(0,0,0,0.15);
+  }
+  .cover p{
+    color:#CFE0D6;
+    margin:0;
+    font-size:14px;
+  }
+  .cover .stitch{
+    position:absolute; left:0; top:0; bottom:0; width:14px;
+    background-image: repeating-linear-gradient(to bottom, rgba(244,239,221,0.55) 0 6px, transparent 6px 13px);
+    background-position:6px 0;
+  }
+
+  /* Cards */
+  .card{
+    background:var(--card);
+    border:1px solid var(--paper-line);
+    border-radius:10px;
+    padding:20px 22px;
+    margin-top:18px;
+    box-shadow:0 1px 0 rgba(0,0,0,0.02);
+  }
+  .card h2{
+    font-size:13px;
+    margin:0 0 14px;
+    color:var(--green-deep);
+    letter-spacing:.08em;
+    text-transform:uppercase;
+    font-weight:700;
+  }
+  label{
+    display:block;
+    font-size:12.5px;
+    color:var(--ink-soft);
+    margin-bottom:6px;
+  }
+  input, select{
+    width:100%;
+    font-family:'IBM Plex Sans Thai', sans-serif;
+    font-size:15px;
+    padding:10px 12px;
+    border:1px solid var(--paper-line);
+    border-radius:7px;
+    background:#fff;
+    color:var(--ink);
+  }
+  input:focus, select:focus{
+    outline:none;
+    border-color:var(--green-mid);
+    box-shadow:0 0 0 3px var(--green-soft);
+  }
+  .salary-row{display:flex; gap:12px; align-items:end;}
+  .salary-row > div:first-child{flex:1;}
+  .salary-row .money-prefix{position:relative;}
+  .salary-row .money-prefix span{
+    position:absolute; left:12px; top:50%; transform:translateY(-50%);
+    color:var(--ink-soft); font-family:'IBM Plex Mono',monospace; font-size:15px;
+  }
+  .salary-row .money-prefix input{padding-left:28px;}
+  .btn{
+    border:none;
+    border-radius:7px;
+    padding:10px 18px;
+    font-family:'IBM Plex Sans Thai', sans-serif;
+    font-weight:600;
+    font-size:14px;
+    cursor:pointer;
+    white-space:nowrap;
+  }
+  .btn-green{background:var(--green-deep); color:#F4EFDD;}
+  .btn-green:hover{background:var(--green-mid);}
+  .btn-ghost{background:transparent; color:var(--red); border:1px solid transparent;}
+  .btn-ghost:hover{text-decoration:underline;}
+
+  /* Add entry form */
+  .add-grid{
+    display:grid;
+    grid-template-columns: 108px 1fr 130px auto;
+    gap:10px;
+    align-items:end;
+  }
+  @media (max-width:600px){
+    .add-grid{grid-template-columns: 1fr 1fr;}
+    .add-grid .full{grid-column:1/-1;}
+  }
+  .type-toggle{display:flex; border:1px solid var(--paper-line); border-radius:7px; overflow:hidden;}
+  .type-toggle button{
+    flex:1; border:none; background:#fff; padding:10px 4px; font-size:12.5px;
+    font-family:'IBM Plex Sans Thai',sans-serif; font-weight:600; cursor:pointer; color:var(--ink-soft);
+  }
+  .type-toggle button.active-income{background:var(--green-soft); color:var(--green-deep);}
+  .type-toggle button.active-expense{background:var(--red-soft); color:var(--red);}
+
+  /* Ledger */
+  .ledger-card{padding:0; overflow:hidden;}
+  .ledger-head{
+    display:flex; justify-content:space-between; align-items:center;
+    padding:16px 22px 0;
+  }
+  .ledger-table{width:100%; border-collapse:collapse; font-family:'IBM Plex Mono', monospace; font-size:13.5px;}
+  .ledger-table thead th{
+    text-align:right;
+    font-family:'IBM Plex Sans Thai', sans-serif;
+    font-size:11.5px;
+    color:var(--ink-soft);
+    text-transform:uppercase;
+    letter-spacing:.06em;
+    padding:14px 14px 8px;
+    border-bottom:1px solid var(--paper-line);
+  }
+  .ledger-table thead th:first-child, .ledger-table thead th:nth-child(2){text-align:left;}
+  .ledger-table tbody td{
+    padding:11px 14px;
+    border-bottom:1px dashed var(--paper-line);
+    text-align:right;
+    vertical-align:middle;
+  }
+  .ledger-table tbody td:first-child{text-align:left; color:var(--ink-soft); font-size:12px; width:34px;}
+  .ledger-table tbody td.desc{text-align:left; font-family:'IBM Plex Sans Thai', sans-serif; color:var(--ink);}
+  .amt-income{color:var(--green-deep); font-weight:600;}
+  .amt-expense{color:var(--red); font-weight:600;}
+  .amt-balance{font-weight:700; color:var(--ink);}
+  .row-del{
+    background:none; border:none; color:#B9AF95; cursor:pointer; font-size:15px; line-height:1;
+    padding:2px 6px;
+  }
+  .row-del:hover{color:var(--red);}
+  .empty-row td{
+    text-align:center; color:var(--ink-soft); font-family:'IBM Plex Sans Thai', sans-serif;
+    padding:26px; font-size:13.5px;
+  }
+
+  /* Summary stamp */
+  .summary{
+    display:flex; gap:16px; flex-wrap:wrap; align-items:center; justify-content:space-between;
+    padding:20px 22px 24px;
+  }
+  .stat-pair{display:flex; gap:20px;}
+  .stat{font-family:'IBM Plex Sans Thai', sans-serif;}
+  .stat .label{font-size:11.5px; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.05em;}
+  .stat .val{font-family:'IBM Plex Mono', monospace; font-size:16px; font-weight:600; margin-top:2px;}
+  .stat.income .val{color:var(--green-deep);}
+  .stat.expense .val{color:var(--red);}
+
+  .stamp{
+    border:2.5px solid var(--gold);
+    border-radius:50%;
+    width:132px; height:132px;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    transform:rotate(-6deg);
+    color:var(--green-deep);
+    position:relative;
+    flex-shrink:0;
+    background:radial-gradient(circle, rgba(184,146,63,0.06), transparent 70%);
+  }
+  .stamp::before{
+    content:"";
+    position:absolute; inset:6px;
+    border:1px dashed var(--gold);
+    border-radius:50%;
+  }
+  .stamp .stamp-label{
+    font-size:9.5px; letter-spacing:.12em; text-transform:uppercase; color:var(--gold); font-weight:700;
+  }
+  .stamp .stamp-val{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:19px; font-weight:700; margin-top:4px; text-align:center; line-height:1.15;
+    padding:0 8px;
+  }
+  .stamp.negative{border-color:var(--red);}
+  .stamp.negative .stamp-val{color:var(--red);}
+  .stamp.negative .stamp-label{color:var(--red);}
+
+  .foot-note{
+    text-align:center; font-size:11.5px; color:var(--ink-soft); margin-top:20px;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="cover">
+    <div class="stitch"></div>
+    <div class="eyebrow">Monthly Ledger · สมุดคู่ฝาก</div>
+    <h1>สมุดบัญชีรายรับ-รายจ่าย</h1>
+    <p>บันทึกรายการหักจากเงินเดือนประจำเดือน แล้วดูยอดคงเหลือแบบไล่รายการ</p>
+  </div>
+
+  <div class="card">
+    <h2>เงินเดือนตั้งต้น</h2>
+    <div class="salary-row">
+      <div class="money-prefix">
+        <label for="salaryInput">เงินเดือนที่ได้รับต้นเดือน</label>
+        <span>฿</span>
+        <input type="number" id="salaryInput" placeholder="0.00" min="0" step="0.01">
+      </div>
+      <button class="btn btn-green" onclick="setSalary()">ตั้งยอดตั้งต้น</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>เพิ่มรายการ</h2>
+    <div class="add-grid">
+      <div>
+        <label>ประเภท</label>
+        <div class="type-toggle" id="typeToggle">
+          <button type="button" id="btnIncome" onclick="selectType('income')">รายรับ</button>
+          <button type="button" id="btnExpense" onclick="selectType('expense')">รายจ่าย</button>
+        </div>
+      </div>
+      <div class="full">
+        <label for="descInput">รายการ</label>
+        <input type="text" id="descInput" placeholder="เช่น ค่าเช่าห้อง, ค่าอาหาร, รายได้เสริม">
+      </div>
+      <div>
+        <label for="amountInput">จำนวนเงิน (฿)</label>
+        <input type="number" id="amountInput" placeholder="0.00" min="0" step="0.01">
+      </div>
+      <button class="btn btn-green" onclick="addEntry()">+ บันทึก</button>
+    </div>
+  </div>
+
+  <div class="card ledger-card">
+    <div class="ledger-head">
+      <h2 style="margin:0;">รายการเดินบัญชี</h2>
+    </div>
+    <table class="ledger-table">
+      <thead>
+        <tr>
+          <th>ลำดับ</th>
+          <th>รายการ</th>
+          <th>รายรับ</th>
+          <th>รายจ่าย</th>
+          <th>คงเหลือ</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="ledgerBody">
+        <tr class="empty-row"><td colspan="6">ยังไม่มีรายการ — เริ่มด้วยการตั้งเงินเดือน แล้วเพิ่มรายการด้านบน</td></tr>
+      </tbody>
+    </table>
+
+    <div class="summary">
+      <div class="stat-pair">
+        <div class="stat income">
+          <div class="label">รวมรายรับ</div>
+          <div class="val" id="totalIncome">฿0.00</div>
+        </div>
+        <div class="stat expense">
+          <div class="label">รวมรายจ่าย</div>
+          <div class="val" id="totalExpense">฿0.00</div>
+        </div>
+      </div>
+      <div class="stamp" id="stampBox">
+        <div class="stamp-label">ยอดคงเหลือ</div>
+        <div class="stamp-val" id="stampVal">฿0.00</div>
+      </div>
+    </div>
+  </div>
+
+  <p class="foot-note">ข้อมูลทั้งหมดถูกเก็บไว้ชั่วคราวในหน้านี้เท่านั้น หากรีเฟรชหน้าเว็บ ข้อมูลจะถูกล้าง</p>
+</div>
+
+<script>
+  let salary = 0;
+  let entries = []; // {type:'income'|'expense', desc, amount}
+  let selectedType = 'expense';
+
+  function fmt(n){
+    const sign = n < 0 ? '-' : '';
+    return sign + '฿' + Math.abs(n).toLocaleString('th-TH', {minimumFractionDigits:2, maximumFractionDigits:2});
+  }
+
+  function selectType(t){
+    selectedType = t;
+    document.getElementById('btnIncome').className = t === 'income' ? 'active-income' : '';
+    document.getElementById('btnExpense').className = t === 'expense' ? 'active-expense' : '';
+  }
+  selectType('expense');
+
+  function setSalary(){
+    const v = parseFloat(document.getElementById('salaryInput').value);
+    salary = isNaN(v) ? 0 : v;
+    render();
+  }
+
+  function addEntry(){
+    const desc = document.getElementById('descInput').value.trim();
+    const amt = parseFloat(document.getElementById('amountInput').value);
+    if(!desc || isNaN(amt) || amt <= 0){
+      alert('กรุณากรอกรายการและจำนวนเงินให้ถูกต้อง');
+      return;
+    }
+    entries.push({type:selectedType, desc, amount:amt});
+    document.getElementById('descInput').value = '';
+    document.getElementById('amountInput').value = '';
+    document.getElementById('descInput').focus();
+    render();
+  }
+
+  function removeEntry(i){
+    entries.splice(i,1);
+    render();
+  }
+
+  function render(){
+    const body = document.getElementById('ledgerBody');
+    body.innerHTML = '';
+
+    if(entries.length === 0){
+      body.innerHTML = '<tr class="empty-row"><td colspan="6">ยังไม่มีรายการ — เริ่มด้วยการตั้งเงินเดือน แล้วเพิ่มรายการด้านบน</td></tr>';
+    } else {
+      let running = salary;
+      entries.forEach((e, i) => {
+        running += e.type === 'income' ? e.amount : -e.amount;
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${i+1}</td>
+          <td class="desc">${escapeHtml(e.desc)}</td>
+          <td class="${e.type==='income' ? 'amt-income' : ''}">${e.type==='income' ? fmt(e.amount) : ''}</td>
+          <td class="${e.type==='expense' ? 'amt-expense' : ''}">${e.type==='expense' ? fmt(e.amount) : ''}</td>
+          <td class="amt-balance">${fmt(running)}</td>
+          <td><button class="row-del" onclick="removeEntry(${i})" title="ลบรายการ">✕</button></td>
+        `;
+        body.appendChild(tr);
+      });
+    }
+
+    const totalIncome = entries.filter(e=>e.type==='income').reduce((s,e)=>s+e.amount,0);
+    const totalExpense = entries.filter(e=>e.type==='expense').reduce((s,e)=>s+e.amount,0);
+    const balance = salary + totalIncome - totalExpense;
+
+    document.getElementById('totalIncome').textContent = fmt(totalIncome);
+    document.getElementById('totalExpense').textContent = fmt(totalExpense);
+    document.getElementById('stampVal').textContent = fmt(balance);
+
+    const stampBox = document.getElementById('stampBox');
+    stampBox.classList.toggle('negative', balance < 0);
+  }
+
+  function escapeHtml(str){
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  render();
+</script>
+</body>
+</html>
